@@ -20,7 +20,7 @@ if ($user->isConnected()) {
     // If 'todolist_id' and 'description' exists...
     if (isset($_GET['todolist_id']) && isset($_GET['description'])) {
         // ...get the todolistId from PHP's GET 
-        $todolistId = $_GET['todolist_id'];
+        $todolistId = (int) $_GET['todolist_id'];
         // ...get the description from PHP's GET 
         $description = $_GET['description'];
 

@@ -62,9 +62,10 @@ class TodoList extends Database {
         if ($todolist_id > 0 && empty(trim($description)) === FALSE) {
             
             $description = htmlspecialchars($description);
-            $completed = false;
             // get the user id
             $userId = $this->user->id;
+            
+            $completed = 0;
     
             //var_dump($createdAt);
     
@@ -73,12 +74,11 @@ class TodoList extends Database {
     
             if ($pdo_res) {
                 // get the latest todo id
-                $id = $this->getLatestTodoId();
+                $taskId = $this->getLatestTaskId($todolist_id);
 
                 $result = array(
-                    "id" => $id,
-                    "description" => $description, 
-                    "completed" => $completed
+                    "id" => $taskId,
+                    "description" => $description
                 );
             }
 
@@ -90,6 +90,16 @@ class TodoList extends Database {
         
     }
 
+    private function getLatestTaskId(int $todolist_id) {
+
+        $pdo_stmt = $this->pdo->prepare("SELECT id FROM `todos` WHERE todolist_id = ? ORDER BY id DESC LIMIT 1"); // order by id des - from last to first/ limit 1 - pick one
+        $pdo_stmt->execute(array($todolist_id));
+
+        $taskId = $pdo_stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $taskId['id'];
+    }
+
     public function deleteTodoList(int $id) : bool {
         $result = false;
 
@@ -98,9 +108,11 @@ class TodoList extends Database {
             //var_dump($createdAt);
     
             $delete_todolist_result = $this->pdo->query("DELETE FROM `todolists` WHERE id = '$id'");
-            $delete_todos_result = $this->pdo->query("DELETE FROM `todos` WHERE todolists_id = '$id'");
+            $delete_todos_result = $this->pdo->query("DELETE FROM `todos` WHERE todolist_id = '$id'");
 
-            $result = true;
+            if ($delete_todolist_result === TRUE && $delete_todos_result === TRUE) {
+                $result = true;
+            }
 
         }
 
@@ -110,6 +122,27 @@ class TodoList extends Database {
         
     }
 
+
+    public function deleteTaskById(int $taskId) : bool {
+        $result = false;
+
+        // if the id is more than zero...
+        if ($taskId > 0) {
+            //var_dump($createdAt);
+    
+            $delete_result = $this->pdo->query("DELETE FROM `todos` WHERE id = '$taskId'");
+
+            // var_dump($delete_result->rowCount());
+
+            if ($delete_result->rowCount() > 0) {
+                $result = true;
+            }
+
+        }
+
+        return $result;
+        
+    }
     public function getAllTodoLists() : array {
         $result = array();
 

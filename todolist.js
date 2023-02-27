@@ -30,9 +30,25 @@ async function deleteTodolistById(todolistId) {
 }
 
 
-async function deleteTaskById(id) {
-    console.log('deleted task by id = ', id);
+async function deleteTaskById(taskId) {
+    console.log('deleted task by id = ', taskId);
 
+    if (confirm("Are you sure?") == true) {
+
+        console.log('deleted task by id = ', taskId);
+    
+        let response = await fetch('api/tdl_delete_task.php?id='+ taskId);
+        let deleteRes = await response.json();
+    
+        let taskEl = document.querySelector(`.todo-data[data-task-id="${taskId}"]`);
+    
+        if (deleteRes.success == "yes") {
+            taskEl.remove();
+        }
+    
+        console.log(taskEl);
+        console.log(deleteRes);
+    }
 
 }
 
@@ -45,6 +61,50 @@ function getTaskHTML(task) {
             <button class="todo-delete-btn" onclick="deleteTaskById(${task.id})"><span class="material-symbols-outlined icon">close</span></button>
         </li>
     `;
+}
+
+async function addTaskWithTodolistId(todolistId) {
+    // get the todolist element with 'todolistId'
+    let taskDescEl = document.querySelector(`.task-description[data-todolist-id='${todolistId}']`);
+
+    let taskValue = taskDescEl.value;
+
+    let response = await fetch(`api/tdl_add_task.php?todolist_id=${todolistId}&description=${taskValue}`);
+
+    let taskRes = await response.json();
+
+    if (taskRes.success == "yes"){
+        let taskData = taskRes.data; 
+
+        let todolistContentEl = document.querySelector(`.todo-list[data-id='${todolistId}'] .content`);
+
+        todolistContentEl.insertAdjacentHTML('beforeend', getTaskHTML(taskData));
+        todolistContentEl.scrollTop = todolistContentEl.scrollHeight;
+
+        taskDescEl.value = '';
+    }
+
+    // get description from todolistEl
+};
+
+async function completeTaskById(taskId){
+    console.log('Task is compleded', taskId);
+    
+    let response = await fetch ('api/tdl_complete_task.php?=id'+ taskId);
+    let completeRes = await response.json();
+}
+
+function handleDescKeyup(event) {
+    if (!event) { return }
+
+    // console.log(event.target);
+    let todolistId = event.target.dataset.todolistId;
+
+    if (event.key === "Enter" || event.keyCode === 13) {
+        addTaskWithTodolistId(todolistId);
+    }
+
+    console.log("Key code is " + event.keyCode);
 }
 
 function getTodolistHTML(data, tasks = []) {
@@ -69,11 +129,12 @@ function getTodolistHTML(data, tasks = []) {
             <ul class="content">${content}</ul>
             
             <div class="input-container">
-                <input type="text" placeholder="What do you want to do?">
-                <button>Add</button>
+                <input data-todolist-id="${data.id}" class="task-description" type="text" placeholder="What do you want to do?" onKeyUp="handleDescKeyup()">
+                <button onclick="addTaskWithTodolistId(${data.id})">Add</button>
             </div>
         </li>`;
 }
+
 
 
 
@@ -86,9 +147,15 @@ async function getAllTodoLists() {
 
     if (allTodoLists.success == "yes") {
 
+        console.log(allTodoLists);
+
         allTodoLists.data.forEach(function(todolistData){
 
             todoListContainerEl.insertAdjacentHTML('beforeend', getTodolistHTML(todolistData, todolistData.tasks));
+
+            // select the task description element
+            let taskDescEl = document.querySelector(`.task-description[data-todolist-id='${todolistData.id}']`);
+            taskDescEl.addEventListener('keyup', handleDescKeyup);
 
         });
 

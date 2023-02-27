@@ -30,14 +30,18 @@ if ($user->isConnected()) {
         // get the todo list id
         $tdl_id = $todolist['id'];
         
-        // get only the 
-        $todolist['tasks'] = array_filter($todos, function($todo) use ($tdl_id) {
+        // get the tasks of this todolist id (tdl_id)
+        $tasks = array_filter($todos, function($todo) use ($tdl_id) {
             return $todo['todolist_id'] == $tdl_id;
         });
+
+        // get only the 
+        $todolist['tasks'] = array_values($tasks);
 
         $todolist['createdAt'] = date('D d/m/Y @ H:i', strtotime($todolist['createdAt']));
 
         $data[] = $todolist;
+        
 
     }
 
@@ -46,6 +50,9 @@ if ($user->isConnected()) {
     $response['message'] = "";
     // add the $data to the response
     $response['data'] = $data;
+
+    //print_r($data);
+
 
 
 }else { // <- user is not connected
